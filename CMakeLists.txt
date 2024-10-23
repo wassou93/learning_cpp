@@ -22,5 +22,6 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Specify multiple include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
+    src
     include
 )
