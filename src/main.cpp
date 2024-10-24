@@ -1,94 +1,91 @@
 #include <iostream>
 
-// Assume wl_list is defined like this
-struct wl_list
-{
-    struct wl_list* prev; // Pointer to the previous element in the list
-    struct wl_list* next; // Pointer to the next element in the list
-};
+#include "linked_list.h"
 
-// Definition of wl_listener
-struct wl_listener
-{
-    struct wl_list link; // This links the listener in a wl_list
-    void ( *notify )( struct wl_listener* listener, void* data ); // Callback function
-};
-
-// Definition of the event source
-struct event_source
-{
-    struct wl_list listeners; // List of listeners
-};
-
-// Function to initialize the wl_list
-void wl_list_init( struct wl_list* list )
-{
-    list->prev = list; // Point to itself (circular)
-    list->next = list; // Point to itself (circular)
-}
-
-// Function to insert a new element into the list
-void wl_list_insert( struct wl_list* list, struct wl_list* new_elem )
-{
-    new_elem->next   = list->next; // Link new element to the next element in the list
-    new_elem->prev   = list; // Link new element back to the list
-    list->next->prev = new_elem; // Adjust the next element's previous pointer
-    list->next       = new_elem; // Update the list's next pointer to new element
-}
-
-// Function to initialize the event source
-void event_source_init( struct event_source* source )
-{
-    wl_list_init( &source->listeners ); // Initialize the listeners list
-}
-
-// Listener callback function
-void my_event_handler( struct wl_listener* listener, void* data )
-{
-    printf( "Event triggered! Data: %s\n", (char*)data );
-}
-
-// Function to add a listener
-void add_listener( struct event_source* source, struct wl_listener* listener )
-{
-    listener->notify = my_event_handler; // Set the callback
-    wl_list_insert( &source->listeners, &listener->link ); // Insert the listener's link into the list
-}
-
-// Function to trigger the event
-void trigger_event( struct event_source* source, void* data )
-{
-    struct wl_listener* listener;
-
-    // Traverse the list and call each listener's notify function
-    for ( listener = (struct wl_listener*)source->listeners.next;
-          listener != (struct wl_listener*)&source->listeners;
-          listener = (struct wl_listener*)listener->link.next )
-    {
-        listener->notify( listener, data ); // Call the listener's callback
-        std::cout << listener << std::endl;
-    }
-}
-
-// Main function demonstrating the usage
 int main()
 {
-    struct event_source source;
-    struct wl_listener listener1, listener2;
+    DoublyLinkedList<int> list;
 
-    event_source_init( &source ); // Initialize the event source
+    // Test case 1: Append to empty list
+    std::cout << "Test 1: Append to empty list\n";
+    list.append( 10 );
+    list.printForward();  // Expected: 10
+    list.printBackward(); // Expected: 10
 
-    // Add first listener
-    add_listener( &source, &listener1 );
-    std::cout << &listener1 << std::endl;
+    // Test case 2: Append multiple elements
+    std::cout << "Test 2: Append multiple elements\n";
+    list.append( 20 );
+    list.append( 30 );
+    list.printForward();  // Expected: 10 20 30
+    list.printBackward(); // Expected: 30 20 10
 
-    // Add second listener
-    add_listener( &source, &listener2 );
-    std::cout << &listener2 << std::endl;
+    // Test case 3: Prepend to empty list
+    std::cout << "Test 3: Prepend to empty list\n";
+    DoublyLinkedList<int> emptyList;
+    emptyList.prepend( 5 );
+    emptyList.printForward();  // Expected: 5
+    emptyList.printBackward(); // Expected: 5
 
-    // Trigger the event with some data
-    char event_data[] = "Hello, listeners!";
-    trigger_event( &source, event_data );
+    // Test case 4: Prepend multiple elements
+    std::cout << "Test 4: Prepend multiple elements\n";
+    emptyList.prepend( 15 );
+    emptyList.prepend( 25 );
+    emptyList.printForward();  // Expected: 25 15 5
+    emptyList.printBackward(); // Expected: 5 15 25
+
+    // Test case 5: Remove head
+    std::cout << "Test 5: Remove head\n";
+    list.remove( 10 );
+    list.printForward();  // Expected: 20 30
+    list.printBackward(); // Expected: 30 20
+
+    // Test case 6: Remove tail
+    std::cout << "Test 6: Remove tail\n";
+    list.remove( 30 );
+    list.printForward();  // Expected: 20
+    list.printBackward(); // Expected: 20
+
+    // Test case 7: Remove middle element
+    list.append( 30 );
+    list.append( 40 );
+    std::cout << "Test 7: Remove middle element\n";
+    list.remove( 30 );
+    list.printForward();  // Expected: 20 40
+    list.printBackward(); // Expected: 40 20
+
+    // Test case 8: Remove last remaining element
+    std::cout << "Test 8: Remove last remaining elements\n";
+    list.remove( 20 );
+    list.remove( 40 );
+    std::cout << "Print forward: ";
+    list.printForward(); // Expected: (empty)
+    std::cout << "Print backwardd: ";
+    list.printBackward(); // Expected: (empty)
+
+    // Test case 9: Handle removing from an empty list
+    std::cout << "Test 9: Handle removing from an empty list\n";
+    try
+    {
+        list.remove( 10 ); // Should throw an exception
+    }
+    catch ( const std::runtime_error &e )
+    {
+        std::cout << e.what()
+                  << std::endl; // Expected: "Value doesn't exist in the list."
+    }
+
+    // Test case 10: Clear method
+    std::cout << "Test 10: Clear method\n";
+    list.append( 50 );
+    list.append( 60 );
+    list.clear();
+    list.printForward(); // Expected: (empty)
+
+    // Test case 11: Check prepend and append after clear
+    std::cout << "Test 11: Prepend and append after clear\n";
+    list.prepend( 70 );
+    list.append( 80 );
+    list.printForward(); // Expected: 70 80
 
     return 0;
 }
